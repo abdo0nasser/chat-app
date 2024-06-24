@@ -8,6 +8,10 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const config = new ConfigService();
   const app = await NestFactory.create(AppModule);
-  await app.listen(config.get('BACKEND_PORT'));
+  app.setGlobalPrefix('/api');
+  await app.listen(config.get('BACKEND_PORT'), () =>
+    console.log(`Running on ${config.get('BACKEND_BASE_URL')}`),
+  );
 }
 bootstrap();
+ 
