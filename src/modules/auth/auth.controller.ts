@@ -56,7 +56,7 @@ export class AuthController {
     schema: SwaggerFailureResponseExample({ errorMessage: 'Bad request' }),
   })
   async login(@Body() loginDto: LoginDto) {
-    const tokens = await this.authService.login(loginDto);
+    const tokens = await this.authService.loginLocal(loginDto);
     return sendSuccessResponse({
       AccessToken: tokens.access_token,
       RefreshToken: tokens.refresh_token,

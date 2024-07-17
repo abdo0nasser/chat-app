@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
 
-export async function hashPassword(pass: string): Promise<string> {
+export async function hash(pass: string): Promise<string> {
   return await argon2.hash(pass);
 }
 

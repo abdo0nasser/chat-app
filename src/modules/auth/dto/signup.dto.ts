@@ -3,6 +3,7 @@ import {
   IsDateString,
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsPhoneNumber,
   IsString,
   MaxLength,
@@ -24,13 +25,6 @@ export class SignupDto {
   })
   @IsGoodPassword()
   Password: string;
-
-  @ApiProperty({
-    example: '1990-8-17',
-    description: 'account date of birth',
-  })
-  @IsDateString() //2022-09-27 18:00:00.000
-  BirthDate: Date;
 
   @ApiProperty({
     example: 'John Doe',
@@ -56,5 +50,14 @@ export class SignupDto {
   })
   @IsPhoneNumber()
   @MaxLength(10)
-  PhoneNumber;
+  @IsOptional()
+  PhoneNumber?: string | null;
+  
+  @ApiProperty({
+    example: '1990-8-17',
+    description: 'account date of birth',
+  })
+  @IsDateString() //2022-09-27 18:00:00.000
+  @IsOptional()
+  BirthDate: Date | null;
 }
