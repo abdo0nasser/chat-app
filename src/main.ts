@@ -14,8 +14,6 @@ async function bootstrap() {
   app.setGlobalPrefix('/api');
   app.useGlobalPipes(new ValidationPipe());
 
-  app.useGlobalFilters(new HttpExceptionFilter());
-
   const swaggerConfig = new DocumentBuilder()
     .setTitle('chat app')
     .setDescription('The chatting application API')
