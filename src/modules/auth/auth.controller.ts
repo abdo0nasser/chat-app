@@ -33,7 +33,6 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Bad request',
-    schema: SwaggerFailureResponseExample({ errorMessage: 'Bad request' }),
   })
   async signup(@Body() signupDto: SignupDto) {
     const { user, access_token, refresh_token } =
@@ -53,8 +52,7 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Bad request',
-    schema: SwaggerFailureResponseExample({ errorMessage: 'Bad request' }),
-  })
+  })  
   async login(@Body() loginDto: LoginDto) {
     const tokens = await this.authService.loginLocal(loginDto);
     return sendSuccessResponse({
