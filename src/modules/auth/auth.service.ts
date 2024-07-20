@@ -31,7 +31,7 @@ export class AuthService {
       email: signupDto.Email,
       full_name: signupDto.FullName,
       join_date: new Date(),
-      phone_number: signupDto.PhoneNumber,
+      phone_number: signupDto.PhoneNumber || null,
       dob,
     };
 
@@ -40,7 +40,6 @@ export class AuthService {
       const user = await prisma.user.create({
         data: userData,
       });
-      if (!user) throw new BadRequestException();
 
       const tokens = await this.issueTokens(
         {
@@ -48,6 +47,7 @@ export class AuthService {
           username: user.username,
         },
         'both',
+        prisma,
       );
 
       // put tokens with the user data
@@ -99,6 +99,8 @@ export class AuthService {
       throw new UnauthorizedException('error issuing tokens');
     }
 
+    this.logger.log('Auth - Login: user logged in: ' + user.username);
+
     return {
       access_token: tokens?.access_token,
       refresh_token: tokens?.refresh_token,
@@ -108,8 +110,10 @@ export class AuthService {
   private async updateRefreshToken(
     user_id: number,
     token: string,
+    prisma = null,
   ): Promise<void> {
-    await this.prismaService.user.update({
+    const prismaObject = prisma || this.prismaService;
+    await prismaObject.user.update({
       where: {
         user_id,
       },
@@ -122,13 +126,14 @@ export class AuthService {
   private async issueTokens(
     payload: TokenPayload,
     type: 'refresh' | 'access' | 'both',
+    prisma = null,
   ): Promise<Tokens> {
     let access_token: string, refresh_token: string;
     if (type === 'access' || type === 'both')
       access_token = await this.issueToken(payload, true);
     if (type === 'refresh' || type === 'both') {
       refresh_token = await this.issueToken(payload, false);
-      await this.updateRefreshToken(payload.sub, refresh_token);
+      await this.updateRefreshToken(payload.sub, refresh_token, prisma);
     }
     return {
       access_token,

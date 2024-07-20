@@ -52,12 +52,12 @@ export class SignupDto {
   @MaxLength(10)
   @IsOptional()
   PhoneNumber?: string | null;
-  
+
   @ApiProperty({
     example: '1990-8-17',
     description: 'account date of birth',
   })
   @IsDateString() //2022-09-27 18:00:00.000
   @IsOptional()
-  BirthDate: Date | null;
+  BirthDate: Date;
 }
