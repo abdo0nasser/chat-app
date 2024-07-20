@@ -10,9 +10,8 @@ import { hash, verify } from 'src/utils/argon2';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Tokens } from './types/token.payload';
+import { TokenPayload, Tokens } from './types/token.payload';
 import { UserWithTokens } from './types/user-with-token.payload';
-import { PrismaExceptionFilter } from 'src/exception-filters/prisma.filter';
 
 @Injectable()
 export class AuthService {
@@ -64,7 +63,7 @@ export class AuthService {
     });
 
     if (!data) {
-      this.logger.error('error creating user');
+      this.logger.error('Auth - Signup: error creating user');
       throw new BadRequestException('error creating user');
     }
 
@@ -83,7 +82,7 @@ export class AuthService {
     });
 
     if (!user || !verify(user.password, loginDto.Password)) {
-      this.logger.error('Logging in: username or password is incorrect');
+      this.logger.error('Auth - Login: username or password is incorrect');
       throw new UnauthorizedException('username or password is incorrect');
     }
 
@@ -95,13 +94,18 @@ export class AuthService {
       'both',
     );
 
+    if (!tokens) {
+      this.logger.error('Auth - Login: error issuing tokens');
+      throw new UnauthorizedException('error issuing tokens');
+    }
+
     return {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
+      access_token: tokens?.access_token,
+      refresh_token: tokens?.refresh_token,
     };
   }
 
-  private async updatingRefreshToken(
+  private async updateRefreshToken(
     user_id: number,
     token: string,
   ): Promise<void> {
@@ -116,17 +120,16 @@ export class AuthService {
   }
 
   private async issueTokens(
-    payload: {
-      sub: number;
-      username: string;
-    },
+    payload: TokenPayload,
     type: 'refresh' | 'access' | 'both',
   ): Promise<Tokens> {
     let access_token: string, refresh_token: string;
     if (type === 'access' || type === 'both')
       access_token = await this.issueToken(payload, true);
-    if (type === 'refresh' || type === 'both')
+    if (type === 'refresh' || type === 'both') {
       refresh_token = await this.issueToken(payload, false);
+      await this.updateRefreshToken(payload.sub, refresh_token);
+    }
     return {
       access_token,
       refresh_token,
@@ -134,10 +137,7 @@ export class AuthService {
   }
 
   private async issueToken(
-    payload: {
-      sub: number;
-      username: string;
-    },
+    payload: TokenPayload,
     isAccess: boolean,
   ): Promise<string> {
     let expiration_time: string;
@@ -149,9 +149,11 @@ export class AuthService {
       expiration_time = this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME');
       secret = this.configService.get('REFRESH_TOKEN_SECRET');
     }
-    return await this.jwtService.signAsync(payload, {
+    const token = await this.jwtService.signAsync(payload, {
       expiresIn: expiration_time,
       secret,
     });
+
+    return token;
   }
 }
