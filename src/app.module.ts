@@ -14,6 +14,7 @@ import type { RedisClientOptions } from 'redis';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     UsersModule,
     PrismaModule,
@@ -29,10 +30,9 @@ import type { RedisClientOptions } from 'redis';
             port: parseInt(configService.get<string>('REDIS_PORT')),
           },
         }),
+        isGlobal: true,
       }),
-      isGlobal: true,
     }),
-    ConfigModule.forRoot({ isGlobal: true }),
   ],
   controllers: [],
   providers: [
