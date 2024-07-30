@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter } from './exception-filters/global.filter';
+import * as cookieParser from 'cookie-parser';
 
 // All of your application code and any imports that should leverage
 // OpenTelemetry automatic instrumentation must go here.
@@ -13,6 +13,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('/api');
   app.useGlobalPipes(new ValidationPipe());
+  app.use(cookieParser());
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('chat app')
