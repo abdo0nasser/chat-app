@@ -8,6 +8,6 @@ export type Tokens = {
 };
 
 export type TokenPayload = {
-  sub: number;
+  user_id: number;
   username: string;
 };

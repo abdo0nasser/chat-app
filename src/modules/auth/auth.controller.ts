@@ -8,7 +8,12 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
-import { ApiBadRequestResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { SerializedUser } from './serialized-types/serialized-user';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './param-decorators/public.decorator';
@@ -19,6 +24,10 @@ import {
 import { swaggerSuccessResponseExample } from 'src/utils/swagger-example-generator';
 import { UserExample } from './swagger-examples/user.example';
 import { LoginExample } from './swagger-examples/login.example';
+import {
+  GetCurrentUser,
+  GetFromCookie,
+} from './param-decorators/get-user.decorator';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -63,5 +72,22 @@ export class AuthController {
       AccessToken: access_token,
       RefreshToken: refresh_token,
     });
+  }
+
+  @ApiBearerAuth()
+  @Post('logout')
+  @ApiOkResponse({
+    description: 'Logout completed Successfully',
+  })
+  logout(
+    @Res({ passthrough: true }) res,
+    @GetCurrentUser('user_id') user_id,
+    @GetFromCookie('access_token') access_token,
+  ) {
+    res.clearCookie('refresh_token');
+
+    return sendSuccessResponse(
+      this.authService.logout({ UserId: user_id, Token: access_token }),
+    );
   }
 }

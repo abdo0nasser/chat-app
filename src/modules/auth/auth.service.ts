@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -12,6 +13,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { TokenPayload, Tokens } from './types/token.payload';
 import { UserWithTokens } from './types/user-with-token.payload';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { LogoutDto } from './dto/logout.dto';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +24,7 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
   ) {}
 
   async signup(signupDto: SignupDto): Promise<UserWithTokens> {
@@ -43,12 +48,17 @@ export class AuthService {
 
       const tokens = await this.issueTokens(
         {
-          sub: user.user_id,
+          user_id: user.user_id,
           username: user.username,
         },
         'both',
         prisma,
       );
+
+      if (!tokens) {
+        this.logger.error('Auth - Signup: error issuing tokens');
+        throw new BadRequestException('error issuing tokens');
+      }
 
       // put tokens with the user data
       await prisma.user.update({
@@ -88,7 +98,7 @@ export class AuthService {
 
     const tokens = await this.issueTokens(
       {
-        sub: user.user_id,
+        user_id: user.user_id,
         username: user.username,
       },
       'both',
@@ -106,6 +116,29 @@ export class AuthService {
       refresh_token: tokens?.refresh_token,
     };
   }
+
+  async logout(logoutDto: LogoutDto): Promise<void> {
+    await this.cacheService.set(
+      logoutDto.Token,
+      logoutDto.UserId,
+      this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME'),
+    );
+    console.log('logoutDto', logoutDto);
+
+    await this.prismaService.user.update({
+      where: {
+        user_id: logoutDto.UserId,
+      },
+      data: {
+        refresh_token: null,
+      },
+    });
+  }
+
+  // async refresh(refreshToken: string) {
+        
+
+  // }
 
   private async updateRefreshToken(
     user_id: number,
@@ -133,7 +166,7 @@ export class AuthService {
       access_token = await this.issueToken(payload, true);
     if (type === 'refresh' || type === 'both') {
       refresh_token = await this.issueToken(payload, false);
-      await this.updateRefreshToken(payload.sub, refresh_token, prisma);
+      await this.updateRefreshToken(payload.user_id, refresh_token, prisma);
     }
     return {
       access_token,
@@ -147,6 +180,7 @@ export class AuthService {
   ): Promise<string> {
     let expiration_time: string;
     let secret: string;
+
     if (isAccess) {
       expiration_time = this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME');
       secret = this.configService.get('ACCESS_TOKEN_SECRET');
