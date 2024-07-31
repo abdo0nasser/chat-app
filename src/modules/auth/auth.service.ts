@@ -118,12 +118,6 @@ export class AuthService {
   }
 
   async logout(logoutDto: LogoutDto): Promise<boolean> {
-    await this.cacheService.set(
-      logoutDto.Token,
-      logoutDto.Username,
-      parseInt(this.configService.get<string>('REDIS_TTL')),
-    );
-
     const removedToken = await this.prismaService.user.update({
       where: {
         username: logoutDto.Username,
@@ -133,22 +127,26 @@ export class AuthService {
       },
     });
 
-    this.logger.log(
-      'Auth - Logout: token blacklisted for user: ' + logoutDto.Username,
-    );
-
     if (!removedToken) {
       this.logger.error('Auth - Logout: error removing token');
       throw new BadRequestException('error removing token');
     }
+
+    await this.cacheService.set(
+      logoutDto.Token,
+      logoutDto.Username,
+      parseInt(this.configService.get<string>('REDIS_TTL')),
+    );
+
+    this.logger.log(
+      'Auth - Logout: token blacklisted for user: ' + logoutDto.Username,
+    );
+
     return true;
   }
 
   async refresh(refreshToken: string): Promise<Tokens> {
-    const payload = (await this.jwtService.decode(
-      refreshToken,
-    )) as TokenPayload;
-
+    const { iat, exp, ...payload } = await this.jwtService.decode(refreshToken);
     if (!payload) throw new UnauthorizedException('Invalid token');
 
     const user = await this.prismaService.user.findUnique({
@@ -227,6 +225,7 @@ export class AuthService {
       expiration_time = this.configService.get('REFRESH_TOKEN_EXPIRATION_TIME');
       secret = this.configService.get('REFRESH_TOKEN_SECRET');
     }
+
     const token = await this.jwtService.signAsync(payload, {
       expiresIn: expiration_time,
       secret,

@@ -25,6 +25,7 @@ import { swaggerSuccessResponseExample } from 'src/utils/swagger-example-generat
 import { UserExample } from './swagger-examples/user.example';
 import { LoginExample } from './swagger-examples/login.example';
 import {
+  GetAccessToken,
   GetCurrentUser,
   GetFromCookie,
 } from './param-decorators/get-user.decorator';
@@ -48,7 +49,6 @@ export class AuthController {
     const { user, access_token, refresh_token } =
       await this.authService.signup(signupDto);
     addTokenToCookie(res, refresh_token, 'refresh_token');
-    addTokenToCookie(res, access_token, 'access_token');
     return sendSuccessResponse({
       user: new SerializedUser(user),
       access_token,
@@ -69,7 +69,6 @@ export class AuthController {
     const { access_token, refresh_token } =
       await this.authService.loginLocal(loginDto);
     addTokenToCookie(res, refresh_token, 'refresh_token');
-    addTokenToCookie(res, access_token, 'access_token');
     return sendSuccessResponse({
       AccessToken: access_token,
       RefreshToken: refresh_token,
@@ -77,6 +76,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiBearerAuth('JWT')
   @ApiOkResponse({
     description: 'Logout completed Successfully',
     schema: swaggerSuccessResponseExample({ type: 'boolean', example: true }),
@@ -84,13 +84,12 @@ export class AuthController {
   async logout(
     @Res({ passthrough: true }) res,
     @GetCurrentUser('username') username,
-    @GetFromCookie('access_token') access_token,
+    @GetAccessToken() access_token,
   ) {
     if (!username || !access_token) {
       return sendSuccessResponse(false);
     }
     await res.clearCookie('refresh_token');
-    await res.clearCookie('access_token');
 
     return sendSuccessResponse(
       await this.authService.logout({
@@ -100,17 +99,14 @@ export class AuthController {
     );
   }
 
+  @Public()
   @Post('refresh')
   @ApiOkResponse({
     description: 'Token refreshed Successfully',
     schema: swaggerSuccessResponseExample(LoginExample),
   })
-  async refresh(
-    @Res({ passthrough: true }) res,
-    @GetFromCookie('refresh_token') refresh_token,
-  ) {
+  async refresh(@GetFromCookie('refresh_token') refresh_token) {
     const tokens = await this.authService.refresh(refresh_token);
-    addTokenToCookie(res, tokens.access_token, 'access_token');
     return sendSuccessResponse({
       AccessToken: tokens.access_token,
       RefreshToken: tokens.refresh_token,
