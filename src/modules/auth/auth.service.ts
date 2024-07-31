@@ -117,28 +117,67 @@ export class AuthService {
     };
   }
 
-  async logout(logoutDto: LogoutDto): Promise<void> {
+  async logout(logoutDto: LogoutDto): Promise<boolean> {
     await this.cacheService.set(
       logoutDto.Token,
-      logoutDto.UserId,
-      this.configService.get('ACCESS_TOKEN_EXPIRATION_TIME'),
+      logoutDto.Username,
+      parseInt(this.configService.get<string>('REDIS_TTL')),
     );
-    console.log('logoutDto', logoutDto);
 
-    await this.prismaService.user.update({
+    const removedToken = await this.prismaService.user.update({
       where: {
-        user_id: logoutDto.UserId,
+        username: logoutDto.Username,
       },
       data: {
         refresh_token: null,
       },
     });
+
+    this.logger.log(
+      'Auth - Logout: token blacklisted for user: ' + logoutDto.Username,
+    );
+
+    if (!removedToken) {
+      this.logger.error('Auth - Logout: error removing token');
+      throw new BadRequestException('error removing token');
+    }
+    return true;
   }
 
-  // async refresh(refreshToken: string) {
-        
+  async refresh(refreshToken: string): Promise<Tokens> {
+    const payload = (await this.jwtService.decode(
+      refreshToken,
+    )) as TokenPayload;
 
-  // }
+    if (!payload) throw new UnauthorizedException('Invalid token');
+
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        user_id: payload.user_id,
+      },
+    });
+
+    if (!user || !(await verify(user.refresh_token, refreshToken))) {
+      this.logger.error('Auth - Refresh: invalid token');
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    const accessToken = await this.issueToken(payload, true);
+
+    if (!accessToken) {
+      this.logger.error('Auth - Refresh: error issuing tokens');
+      throw new UnauthorizedException('error issuing tokens');
+    }
+
+    this.logger.log(
+      'Auth - Refresh: access token refreshed for user: ' + user.username,
+    );
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+  }
 
   private async updateRefreshToken(
     user_id: number,

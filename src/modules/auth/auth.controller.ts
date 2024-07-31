@@ -48,6 +48,7 @@ export class AuthController {
     const { user, access_token, refresh_token } =
       await this.authService.signup(signupDto);
     addTokenToCookie(res, refresh_token, 'refresh_token');
+    addTokenToCookie(res, access_token, 'access_token');
     return sendSuccessResponse({
       user: new SerializedUser(user),
       access_token,
@@ -68,26 +69,51 @@ export class AuthController {
     const { access_token, refresh_token } =
       await this.authService.loginLocal(loginDto);
     addTokenToCookie(res, refresh_token, 'refresh_token');
+    addTokenToCookie(res, access_token, 'access_token');
     return sendSuccessResponse({
       AccessToken: access_token,
       RefreshToken: refresh_token,
     });
   }
 
-  @ApiBearerAuth()
   @Post('logout')
   @ApiOkResponse({
     description: 'Logout completed Successfully',
+    schema: swaggerSuccessResponseExample({ type: 'boolean', example: true }),
   })
-  logout(
+  async logout(
     @Res({ passthrough: true }) res,
-    @GetCurrentUser('user_id') user_id,
+    @GetCurrentUser('username') username,
     @GetFromCookie('access_token') access_token,
   ) {
-    res.clearCookie('refresh_token');
+    if (!username || !access_token) {
+      return sendSuccessResponse(false);
+    }
+    await res.clearCookie('refresh_token');
+    await res.clearCookie('access_token');
 
     return sendSuccessResponse(
-      this.authService.logout({ UserId: user_id, Token: access_token }),
+      await this.authService.logout({
+        Username: username,
+        Token: access_token,
+      }),
     );
+  }
+
+  @Post('refresh')
+  @ApiOkResponse({
+    description: 'Token refreshed Successfully',
+    schema: swaggerSuccessResponseExample(LoginExample),
+  })
+  async refresh(
+    @Res({ passthrough: true }) res,
+    @GetFromCookie('refresh_token') refresh_token,
+  ) {
+    const tokens = await this.authService.refresh(refresh_token);
+    addTokenToCookie(res, tokens.access_token, 'access_token');
+    return sendSuccessResponse({
+      AccessToken: tokens.access_token,
+      RefreshToken: tokens.refresh_token,
+    });
   }
 }
