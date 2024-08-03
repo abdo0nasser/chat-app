@@ -11,6 +11,7 @@ import { PrismaExceptionFilter } from './exception-filters/prisma.filter';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import type { RedisClientOptions } from 'redis';
+import { ChatsModule } from './modules/chats/chats.module';
 
 @Module({
   imports: [
@@ -23,16 +24,15 @@ import type { RedisClientOptions } from 'redis';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         store: await redisStore({
-          ttl: parseInt(configService.get<string>('REDIS_TTL')),
-          password: configService.get<string>('REDIS_PASSWORD'),
           socket: {
             host: configService.get<string>('REDIS_HOST'),
-            port: parseInt(configService.get<string>('REDIS_PORT')),
+            port: configService.get<number>('REDIS_PORT'),
           },
         }),
       }),
       isGlobal: true,
     }),
+    ChatsModule,
   ],
   controllers: [],
   providers: [

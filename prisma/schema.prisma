@@ -8,19 +8,21 @@ datasource db {
 }
 
 model user {
-  user_id       Int       @id @default(autoincrement())
-  username      String    @unique @db.VarChar(20)
-  email         String    @unique @db.VarChar(50)
-  password      String    @db.VarChar(100)
-  phone_number  String?   @db.VarChar(50)
-  full_name     String    @db.VarChar(50)
-  join_date     DateTime
-  dob           DateTime?
-  refresh_token String?
+  user_id            Int       @id @default(autoincrement())
+  username           String    @unique @db.VarChar(20)
+  email              String    @unique @db.VarChar(50)
+  password           String    @db.VarChar(100)
+  full_name          String    @db.VarChar(50)
+  join_date          DateTime  @default(now())
+  joined_chats_count Int       @default(0)
+  phone_number       String?   @db.VarChar(50)
+  dob                DateTime?
+  refresh_token      String?
 
-  user_tag user_tag[]
-  chat     chat[]
-  message  message[]
+  user_tag  user_tag[]
+  message   message[]
+  chat      chat[]
+  user_chat user_chat[]
 
   @@index([username])
 }
@@ -45,13 +47,15 @@ model user_tag {
 model chat {
   chat_id     Int      @id @default(autoincrement())
   title       String   @db.VarChar(50)
-  created     DateTime
-  description String
+  description String   @db.VarChar(100)
+  created_at  DateTime @default(now())
   admin_id    Int
+  users_count Int      @default(1)
 
-  user     user       @relation(fields: [admin_id], references: [user_id])
-  chat_tag chat_tag[]
-  message  message[]
+  admin     user        @relation(fields: [admin_id], references: [user_id])
+  chat_tag  chat_tag[]
+  message   message[]
+  user_chat user_chat[]
 }
 
 model chat_tag {
@@ -64,12 +68,22 @@ model chat_tag {
   @@id([tag_name, chat_id])
 }
 
+model user_chat {
+  user_id Int
+  chat_id Int
+
+  user user @relation(fields: [user_id], references: [user_id])
+  chat chat @relation(fields: [chat_id], references: [chat_id])
+
+  @@id([user_id, chat_id])
+}
+
 model message {
   message_id Int      @id @default(autoincrement())
   chat_id    Int
   user_id    Int
   content    String
-  created    DateTime
+  created_at DateTime @default(now())
 
   chat chat @relation(fields: [chat_id], references: [chat_id])
   user user @relation(fields: [user_id], references: [user_id])
