@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { user } from '@prisma/client';
-import { Exclude } from 'class-transformer';
 
 export class SerializedUser {
   @ApiProperty({
@@ -26,15 +25,6 @@ export class SerializedUser {
     description: 'account email',
   })
   Email: string;
-
-  @Exclude()
-  password: string;
-
-  @Exclude()
-  join_date: string;
-
-  @Exclude()
-  id: number;
 
   constructor(partial: Partial<user>) {
     this.Email = partial.email;
