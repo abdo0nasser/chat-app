@@ -47,7 +47,7 @@ model user_tag {
 model chat {
   chat_id     Int      @id @default(autoincrement())
   title       String   @db.VarChar(50)
-  description String   @db.VarChar(100)
+  description String?   @db.VarChar(100)
   created_at  DateTime @default(now())
   admin_id    Int
   users_count Int      @default(1)
