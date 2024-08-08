@@ -12,7 +12,12 @@ async function bootstrap() {
   const configService = new ConfigService();
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('/api');
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
   app.use(cookieParser());
 
   const swaggerConfig = new DocumentBuilder()
