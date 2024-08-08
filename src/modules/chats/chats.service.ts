@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { chat } from '@prisma/client';
+import { PaginationDto } from 'src/common/pagination.dto';
 
 @Injectable()
 export class ChatsService {
@@ -32,18 +33,17 @@ export class ChatsService {
     return chat;
   }
 
-  async getChat(chat_id: number): Promise<chat> {
-    const chat = await this.prismaService.chat.findUnique({
-      where: {
-        chat_id: chat_id,
-      },
+  async getChats(paginationDto: PaginationDto): Promise<chat[]> {
+    const chats = await this.prismaService.chat.findMany({
+      take: paginationDto.Limit,
+      skip: (paginationDto.Page - 1) * paginationDto.Limit,
     });
 
-    if (!chat) {
-      this.logger.error('Chat - Get: Chat not found');
+    if (!chats) {
+      this.logger.error('Chats - Get: Chat not found');
       throw new BadRequestException('Chat not found');
     }
 
-    return chat;
+    return chats;
   }
 }
