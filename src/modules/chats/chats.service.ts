@@ -169,4 +169,79 @@ export class ChatsService {
 
     return true;
   }
+
+  async leaveChat(user_id: number, chat_id: number): Promise<boolean> {
+    const chat = await this.prismaService.$transaction(async (prisma) => {
+      const chat = await prisma.chat.findUnique({
+        where: {
+          chat_id,
+        },
+      });
+
+      if (!chat) {
+        this.logger.error('Chat - Join: Chat not found');
+        throw new BadRequestException('Chat not found');
+      }
+
+      if (chat.admin_id === user_id) {
+        this.logger.error(
+          'Chat - Join: Owner cannot leave chat but only remove it',
+        );
+        throw new BadRequestException(
+          'Owner cannot leave chat but only remove it',
+        );
+      }
+
+      const isJoined = await prisma.user_chat.findFirst({
+        where: {
+          chat_id,
+          user_id,
+        },
+      });
+
+      if (!isJoined) {
+        this.logger.error('Chat - Join: User is not in the chat');
+        throw new BadRequestException('User is not in the chat');
+      }
+
+      const leftUser = await prisma.user_chat.delete({
+        where: {
+          user_id_chat_id: {
+            chat_id,
+            user_id,
+          },
+        },
+      });
+
+      if (!leftUser) {
+        this.logger.error('Chat - Join: User not removed from the chat');
+        throw new BadRequestException('User not removed from the chat');
+      }
+
+      const updatedChatCount = await prisma.chat.update({
+        where: {
+          chat_id,
+        },
+        data: {
+          users_count: {
+            decrement: 1,
+          },
+        },
+      });
+
+      if (!updatedChatCount) {
+        this.logger.error('Chat - Join: Chat count not updated');
+        throw new BadRequestException('Chat count not updated');
+      }
+
+      return chat;
+    });
+
+    if (!chat) {
+      this.logger.error('Chat - Join: cannot join chat');
+      throw new BadRequestException('Cannot join chat');
+    }
+
+    return true;
+  }
 }

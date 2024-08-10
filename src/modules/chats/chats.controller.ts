@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -86,6 +87,22 @@ export class ChatsController {
   ) {
     return sendSuccessResponse({
       joined: await this.chatsService.joinChat(user_id, chat_id),
+    });
+  }
+
+  @Delete('leave/:chat_id')
+  @ApiOkResponse({
+    description: 'Chat left successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Bad request',
+  })
+  async leaveChat(
+    @GetCurrentUser('user_id') user_id: number,
+    @Param('chat_id') chat_id: number,
+  ) {
+    return sendSuccessResponse({
+      left: await this.chatsService.leaveChat(user_id, chat_id),
     });
   }
 }
