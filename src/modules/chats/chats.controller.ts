@@ -105,4 +105,20 @@ export class ChatsController {
       left: await this.chatsService.leaveChat(user_id, chat_id),
     });
   }
+
+  @Delete(':chat_id')
+  @ApiOkResponse({
+    description: 'Chat deleted successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Bad request',
+  })
+  async deleteChat(
+    @GetCurrentUser('user_id') user_id: number,
+    @Param('chat_id') chat_id: number,
+  ) {
+    return sendSuccessResponse({
+      deleted: await this.chatsService.deleteChat(user_id, chat_id),
+    });
+  }
 }

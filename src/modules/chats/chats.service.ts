@@ -244,4 +244,57 @@ export class ChatsService {
 
     return true;
   }
+
+  async deleteChat(user_id: number, chat_id: number): Promise<boolean> {
+    const chatDeleted = await this.prismaService.$transaction(
+      async (prisma) => {
+        const chat = await prisma.chat.findUnique({
+          where: {
+            chat_id,
+          },
+        });
+
+        if (!chat) {
+          this.logger.error('Chat - Delete: Chat not found');
+          throw new BadRequestException('Chat not found');
+        }
+
+        if (chat.admin_id !== user_id) {
+          this.logger.error('Chat - Delete: User is not the owner of the chat');
+          throw new BadRequestException('User is not the owner of the chat');
+        }
+
+        const deletedUserChat = await prisma.user_chat.deleteMany({
+          where: {
+            chat_id,
+          },
+        });
+
+        if (!deletedUserChat) {
+          this.logger.error('Chat - Delete: User chat not deleted');
+          throw new BadRequestException('User chat not deleted');
+        }
+
+        const deletedChat = await prisma.chat.delete({
+          where: {
+            chat_id,
+          },
+        });
+
+        if (!deletedChat) {
+          this.logger.error('Chat - Delete: Chat not deleted');
+          throw new BadRequestException('Chat not deleted');
+        }
+
+        return chat;
+      },
+    );
+
+    if (!chatDeleted) {
+      this.logger.error('Chat - Delete: cannot delete chat');
+      throw new BadRequestException('Cannot delete chat');
+    }
+
+    return true;
+  }
 }
