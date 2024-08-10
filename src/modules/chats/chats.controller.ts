@@ -3,6 +3,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   UseInterceptors,
@@ -49,6 +50,24 @@ export class ChatsController {
   async getChats(@Query() paginationDto: PaginationDto) {
     return sendSuccessResponse(
       (await this.chatsService.getChats(paginationDto)).map(
+        (chat) => new SerializedChat(chat),
+      ),
+    );
+  }
+
+  @Get('find')
+  @ApiOkResponse({
+    description: 'Chats fetched successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Bad request',
+  })
+  async getChatsByName(
+    @Query() paginationDto: PaginationDto,
+    @Query('q') title: string,
+  ) {
+    return sendSuccessResponse(
+      (await this.chatsService.getChatsByName(paginationDto, title)).map(
         (chat) => new SerializedChat(chat),
       ),
     );

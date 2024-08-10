@@ -35,8 +35,30 @@ export class ChatsService {
 
   async getChats(paginationDto: PaginationDto): Promise<chat[]> {
     const chats = await this.prismaService.chat.findMany({
-      take: paginationDto.Limit,
-      skip: (paginationDto.Page - 1) * paginationDto.Limit,
+      take: paginationDto.limit,
+      skip: (paginationDto.page - 1) * paginationDto.limit,
+    });
+
+    if (!chats) {
+      this.logger.error('Chats - Get: Chat not found');
+      throw new BadRequestException('Chat not found');
+    }
+
+    return chats;
+  }
+
+  async getChatsByName(
+    paginationDto: PaginationDto,
+    name: string,
+  ): Promise<chat[]> {
+    const chats = await this.prismaService.chat.findMany({
+      where: {
+        title: {
+          contains: name,
+        },
+      },
+      take: paginationDto.limit,
+      skip: (paginationDto.page - 1) * paginationDto.limit,
     });
 
     if (!chats) {
