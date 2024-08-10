@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { chat } from '@prisma/client';
@@ -108,7 +114,7 @@ export class ChatsService {
 
       if (!chat) {
         this.logger.error('Chat - Join: Chat not found');
-        throw new BadRequestException('Chat not found');
+        throw new NotFoundException('Chat not found');
       }
 
       const isJoined = await prisma.user_chat.findFirst({
@@ -180,7 +186,7 @@ export class ChatsService {
 
       if (!chat) {
         this.logger.error('Chat - Join: Chat not found');
-        throw new BadRequestException('Chat not found');
+        throw new NotFoundException('Chat not found');
       }
 
       if (chat.admin_id === user_id) {
@@ -256,12 +262,12 @@ export class ChatsService {
 
         if (!chat) {
           this.logger.error('Chat - Delete: Chat not found');
-          throw new BadRequestException('Chat not found');
+          throw new NotFoundException('Chat not found');
         }
 
         if (chat.admin_id !== user_id) {
           this.logger.error('Chat - Delete: User is not the owner of the chat');
-          throw new BadRequestException('User is not the owner of the chat');
+          throw new ForbiddenException('User is not the owner of the chat');
         }
 
         const deletedUserChat = await prisma.user_chat.deleteMany({

@@ -9,7 +9,7 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
 import { sendSuccessResponse } from 'src/utils/success-response-genarator';
 import { GetCurrentUser } from '../auth/param-decorators/get-user.decorator';
@@ -91,7 +91,7 @@ export class ChatsController {
   }
 
   @Delete('leave/:chat_id')
-  @ApiOkResponse({
+  @ApiNoContentResponse({
     description: 'Chat left successfully',
   })
   @ApiBadRequestResponse({
@@ -101,13 +101,11 @@ export class ChatsController {
     @GetCurrentUser('user_id') user_id: number,
     @Param('chat_id') chat_id: number,
   ) {
-    return sendSuccessResponse({
-      left: await this.chatsService.leaveChat(user_id, chat_id),
-    });
+    await this.chatsService.leaveChat(user_id, chat_id);
   }
 
   @Delete(':chat_id')
-  @ApiOkResponse({
+  @ApiNoContentResponse({
     description: 'Chat deleted successfully',
   })
   @ApiBadRequestResponse({
@@ -117,8 +115,6 @@ export class ChatsController {
     @GetCurrentUser('user_id') user_id: number,
     @Param('chat_id') chat_id: number,
   ) {
-    return sendSuccessResponse({
-      deleted: await this.chatsService.deleteChat(user_id, chat_id),
-    });
+    await this.chatsService.deleteChat(user_id, chat_id);
   }
 }
