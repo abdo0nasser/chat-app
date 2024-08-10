@@ -9,13 +9,25 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
 import { sendSuccessResponse } from 'src/utils/success-response-genarator';
 import { GetCurrentUser } from '../auth/param-decorators/get-user.decorator';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SerializedChat } from './serialized-types/serialized-chat';
 import { PaginationDto } from 'src/common/pagination.dto';
+import { swaggerSuccessResponseExample } from 'src/utils/swagger-example-generator';
+import {
+  ChatExample,
+  ManyChatsExample as ManyChatsExample,
+} from './swagger-examples/chat.example';
 
 @Controller('chats')
 @ApiTags('chats')
@@ -26,6 +38,7 @@ export class ChatsController {
   @Post('')
   @ApiOkResponse({
     description: 'Chat created successfully',
+    schema: swaggerSuccessResponseExample(ChatExample),
   })
   @ApiBadRequestResponse({
     description: 'Bad request',
@@ -44,6 +57,7 @@ export class ChatsController {
   @Get('')
   @ApiOkResponse({
     description: 'Chats fetched successfully',
+    schema: swaggerSuccessResponseExample(ManyChatsExample),
   })
   @ApiBadRequestResponse({
     description: 'Bad request',
@@ -59,6 +73,7 @@ export class ChatsController {
   @Get('find')
   @ApiOkResponse({
     description: 'Chats fetched successfully',
+    schema: swaggerSuccessResponseExample(ManyChatsExample),
   })
   @ApiBadRequestResponse({
     description: 'Bad request',
@@ -78,6 +93,9 @@ export class ChatsController {
   @ApiOkResponse({
     description: 'Chat joined successfully',
   })
+  @ApiNotFoundResponse({
+    description: 'Chat not found',
+  })
   @ApiBadRequestResponse({
     description: 'Bad request',
   })
@@ -94,6 +112,9 @@ export class ChatsController {
   @ApiNoContentResponse({
     description: 'Chat left successfully',
   })
+  @ApiNotFoundResponse({
+    description: 'Chat not found',
+  })
   @ApiBadRequestResponse({
     description: 'Bad request',
   })
@@ -107,6 +128,12 @@ export class ChatsController {
   @Delete(':chat_id')
   @ApiNoContentResponse({
     description: 'Chat deleted successfully',
+  })
+  @ApiForbiddenResponse({
+    description: 'user is not the owner of the chat',
+  })
+  @ApiNotFoundResponse({
+    description: 'Chat not found',
   })
   @ApiBadRequestResponse({
     description: 'Bad request',
