@@ -72,4 +72,20 @@ export class ChatsController {
       ),
     );
   }
+
+  @Post('join/:chat_id')
+  @ApiOkResponse({
+    description: 'Chat joined successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Bad request',
+  })
+  async joinChat(
+    @GetCurrentUser('user_id') user_id: number,
+    @Param('chat_id') chat_id: number,
+  ) {
+    return sendSuccessResponse({
+      joined: await this.chatsService.joinChat(user_id, chat_id),
+    });
+  }
 }
