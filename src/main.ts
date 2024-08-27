@@ -5,9 +5,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 
-// All of your application code and any imports that should leverage
-// OpenTelemetry automatic instrumentation must go here.
-
 async function bootstrap() {
   const configService = new ConfigService();
   const app = await NestFactory.create(AppModule);
