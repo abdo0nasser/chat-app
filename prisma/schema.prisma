@@ -15,11 +15,9 @@ model user {
   full_name          String    @db.VarChar(50)
   join_date          DateTime  @default(now())
   joined_chats_count Int       @default(0)
-  phone_number       String?   @db.VarChar(50)
   dob                DateTime?
   refresh_token      String?
 
-  user_tag  user_tag[]
   message   message[]
   chat      chat[]
   user_chat user_chat[]
@@ -27,50 +25,23 @@ model user {
   @@index([username])
 }
 
-model tag {
-  tag_name String @id
-
-  user_tag user_tag[]
-  chat_tag chat_tag[]
-}
-
-model user_tag {
-  user_id  Int
-  tag_name String
-
-  user user @relation(fields: [user_id], references: [user_id])
-  tag  tag  @relation(fields: [tag_name], references: [tag_name])
-
-  @@id([tag_name, user_id])
-}
-
 model chat {
   chat_id     Int      @id @default(autoincrement())
   title       String   @db.VarChar(50)
-  description String?   @db.VarChar(100)
+  description String?  @db.VarChar(100)
   created_at  DateTime @default(now())
   admin_id    Int
   users_count Int      @default(1)
 
   admin     user        @relation(fields: [admin_id], references: [user_id])
-  chat_tag  chat_tag[]
   message   message[]
   user_chat user_chat[]
 }
 
-model chat_tag {
-  chat_id  Int
-  tag_name String
-
-  chat chat @relation(fields: [chat_id], references: [chat_id])
-  tag  tag  @relation(fields: [tag_name], references: [tag_name])
-
-  @@id([tag_name, chat_id])
-}
-
 model user_chat {
-  user_id Int
-  chat_id Int
+  user_id   Int
+  chat_id   Int
+  joined_at DateTime @default(now())
 
   user user @relation(fields: [user_id], references: [user_id])
   chat chat @relation(fields: [chat_id], references: [chat_id])
@@ -81,10 +52,10 @@ model user_chat {
 model message {
   message_id Int      @id @default(autoincrement())
   chat_id    Int
-  user_id    Int
+  sender_id  Int
   content    String
   created_at DateTime @default(now())
 
   chat chat @relation(fields: [chat_id], references: [chat_id])
-  user user @relation(fields: [user_id], references: [user_id])
+  user user @relation(fields: [sender_id], references: [user_id])
 }
