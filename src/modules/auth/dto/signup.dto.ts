@@ -4,7 +4,6 @@ import {
   IsEmail,
   IsNotEmpty,
   IsOptional,
-  IsPhoneNumber,
   IsString,
   MaxLength,
 } from 'class-validator';
@@ -43,15 +42,6 @@ export class SignupDto {
   @IsNotEmpty()
   @MaxLength(50)
   Email: string;
-
-  @ApiProperty({
-    example: '+201122334455',
-    description: 'account phone number',
-  })
-  @IsPhoneNumber()
-  @MaxLength(10)
-  @IsOptional()
-  PhoneNumber?: string | null;
 
   @ApiProperty({
     example: '1990-8-17',

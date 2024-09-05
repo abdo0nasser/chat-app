@@ -35,7 +35,6 @@ export class AuthService {
       password: await hash(signupDto.Password),
       email: signupDto.Email,
       full_name: signupDto.FullName,
-      phone_number: signupDto.PhoneNumber || null,
       dob,
     };
 
