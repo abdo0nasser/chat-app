@@ -6,7 +6,7 @@ import {
 import { user } from '@prisma/client';
 
 export const GetCurrentUser = createParamDecorator(
-  (data: keyof user | undefined, context: ExecutionContext) => {
+  (data: 'user_id' | 'username' | undefined, context: ExecutionContext) => {
     const request = context.switchToHttp().getRequest();
 
     if (!data) return request.user;
