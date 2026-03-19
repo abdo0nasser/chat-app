@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  user_id            Int       @id @default(autoincrement())
+  username           String    @unique @db.VarChar(20)
+  email              String    @unique @db.VarChar(50)
+  password           String    @db.VarChar(100)
+  full_name          String    @db.VarChar(50)
+  join_date          DateTime  @default(now())
+  joined_chats_count Int       @default(0)
+  dob                DateTime?
+  refresh_token      String?
+
+  message   message[]
+  chat      chat[]
+  user_chat user_chat[]
+
+  @@index([username])
+}
+
+model chat {
+  chat_id     Int      @id @default(autoincrement())
+  title       String   @db.VarChar(50)
+  description String?  @db.VarChar(100)
+  created_at  DateTime @default(now())
+  admin_id    Int
+  users_count Int      @default(1)
+
+  admin     user        @relation(fields: [admin_id], references: [user_id])
+  message   message[]
+  user_chat user_chat[]
+}
+
+model user_chat {
+  user_id   Int
+  chat_id   Int
+  joined_at DateTime @default(now())
+
+  user user @relation(fields: [user_id], references: [user_id])
+  chat chat @relation(fields: [chat_id], references: [chat_id])
+
+  @@id([user_id, chat_id])
+}
+
+model message {
+  message_id Int      @id @default(autoincrement())
+  chat_id    Int
+  sender_id  Int
+  content    String
+  created_at DateTime @default(now())
+
+  chat chat @relation(fields: [chat_id], references: [chat_id])
+  user user @relation(fields: [sender_id], references: [user_id])
+}
